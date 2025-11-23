@@ -153,7 +153,25 @@ body{
   }
 }
 
-</style></head><body>
+</style>
+
+<script>
+  (function () {
+    // すでに /m/ にいるなら何もしない
+    var path = window.location.pathname;
+    if (path.endsWith('/m') || path.endsWith('/m/')) return;
+
+    // モバイルっぽい環境を判定（画面幅 or タッチデバイス）
+    var isMobile =
+      window.matchMedia('(max-width: 900px)').matches ||
+      window.matchMedia('(pointer: coarse)').matches;
+
+    if (isMobile) {
+      window.location.href = './m/';
+    }
+  })();
+</script>
+</head><body>
 <div id="pv18-info">
   <h2>Piano Skill Acceleration</h2>
   <p>
