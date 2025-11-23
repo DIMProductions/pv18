@@ -58,7 +58,11 @@ The **canonical implementation is the root `index.html`**.
 pv18/
   ├── index.html                 # Main PC/mobile-responsive build
   ├── assets/
-  │     └── fonts/PressStart2P.woff2
+  │     ├── fonts/
+  │     │     └── PressStart2P.woff2
+  │     └── pic/
+  │           ├── faviconpv18.svg
+  │           └── pianovirtuoso18.jpg
   ├── m/
   │     └── index.html           # Mobile-only demo (experimental)
   └── README.md
