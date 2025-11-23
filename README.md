@@ -3,7 +3,8 @@
 
 Piano Virtuoso 18 (PV18) is a browser-based speed & precision trainer  
 designed to measure and improve rapid repeated-note performance.  
-Built for pianists, keyboardists, and performers aiming for extreme finger agility.
+It analyzes finger dexterity, repetition accuracy, and short-burst control  
+through a clean 10-second challenge format.
 
 ---
 
@@ -11,116 +12,133 @@ Built for pianists, keyboardists, and performers aiming for extreme finger agili
 - 10-second rapid-note performance test  
 - Real-time MIDI input analysis (Web MIDI API)  
 - Repetition speed counter  
-- Timing-stability evaluation  
-- Training modes:
-  - **Erlkönig Mode** — C4 rapid taps  
+- Timing stability evaluation  
+- Multiple training modes:
+  - **Erlkönig Mode** — C4 repeated taps  
   - **Trill Mode** — C4 ↔ D4 alternation  
-- Lightweight browser implementation — no installation needed
+- Built as a lightweight browser app  
+- Works on Windows / macOS with any MIDI keyboard
 
 ---
 
 ## 🕹 Modes
 
-### ⭐ Erlkönig Mode
-- MIDI Note: **60 (C4)**
-- Tap as fast as possible for 10 seconds
+### ⭐ **Erlkönig Mode**
+- MIDI note: **60 (C4)**
+- Tap C repeatedly for 10 seconds  
+- Designed for Romantic repeated-note technique (Liszt / Sturm etc.)
 
-### ⭐ Trill Mode
-- MIDI Notes: **60 ↔ 62 (C4 ↔ D4)**
-- Measures alternation speed & stability
+### ⭐ **Trill Mode**
+- MIDI notes: **60 ↔ 62 (C4 ↔ D4)**
+- Measures alternation speed & stability  
+- Useful for trill development in classical repertoire
 
-### ⭐ Custom Mode *(Coming Soon)*
-- User-selectable keys  
-- Scale endurance patterns
+### ⭐ **Custom Mode** *(Coming soon)*  
+User-selectable keys, scale patterns, and velocity tracking.
 
+---
+
+## 📱 Mobile Demo (Experimental)
+
+A **separate, simplified mobile-only demo UI** exists at:
+
+```text
+/m/index.html
+```
+
+This mobile demo is *not* the main version of PV18.  
+It is an experimental UI prototype for mobile layout testing.  
+The **canonical implementation is the root `index.html`**.
+```
 ---
 
 ## 📁 Project Structure
-```
 
-pianovirtuoso18/
-├── index.html
-└── README.md
-
+```text
+pv18/
+  ├── index.html                 # Main PC/mobile-responsive build
+  ├── assets/
+  │     └── fonts/PressStart2P.woff2
+  ├── m/
+  │     └── index.html           # Mobile-only demo (experimental)
+  └── README.md
 ````
 
 ---
 
-## 🔧 Development (Local Testing)
+## 🔧 Local Development
 
-PV18 must be served over **http://localhost/** for Web MIDI API to work.  
-Browsers block Web MIDI on `file://`.
-
-Start a local server:
+PV18 requires a local server for Web MIDI API.
+Use Python’s built-in server:
 
 ```sh
+cd pv18
 python3 -m http.server 8080
-````
+```
 
-Open:
+Then open:
 
 ```
 http://localhost:8080
 ```
 
+PV18 will load with full MIDI support.
+
 ---
 
-## 🌐 Online Demo
+## 🌐 Online Demo (Coming Soon)
 
-(Coming Soon)
+PV18 will be deployed on:
 
 ```
 https://pv18.dim.productions
 ```
 
-PV18 will be deployed via GitHub Pages inside the DIMProductions organization.
+GitHub Pages + Cloudflare will host the production build.
 
 ---
 
 ## 📜 License / IP Notice
 
-© 2025 **DIMProductions**
-Authored by **Davinci Leonhard**.
+© 2025 DIMProductions
+Author: **Davinci Leonhard**
 
-Piano Virtuoso 18 is proprietary software of DIMProductions.
-Unauthorized reproduction, distribution, or modification is prohibited.
+Piano Virtuoso 18 is proprietary and confidential software.
+Unauthorized reproduction, redistribution, or modification is prohibited.
+
+See the `LICENSE` file for full legal terms.
 
 ---
 
 ## 🗺 Roadmap
 
-* Custom key mode
-* Scale training mode
-* Cloud score leaderboard
-* AI-based finger-stroke quality evaluation (DivinasVision Core)
-* Mobile optimization
+* Custom note mode
+* Scale endurance mode
+* Cloud leaderboard / ranking
+* AI-based finger stroke quality evaluation (via DivinasVision Core)
+* Responsive design refinements
+* Performance analytics dashboard
 
 ---
 
 ## 🙌 Contributing
 
-Internal use only.
-External contributions are not accepted.
+Internal use only — external contributions are not accepted.
 
-````
+```
 
----
-
-# 📄 **LICENSE（完全版）**
-
-```text
-Copyright (c) 2025 DIMProductions  
+Piano Virtuoso 18
+Copyright (c) 2025 DIMProductions
 All Rights Reserved.
 
-Piano Virtuoso 18 (PV18) is proprietary software owned by DIMProductions.
+This software is proprietary and confidential.
+Unauthorized copying, distribution, modification, or use of this software,
+in whole or in part, is strictly prohibited without written permission
+from DIMProductions.
 
-Permission is NOT granted to copy, redistribute, modify, merge, publish,
-sell, sublicense, or create derivative works from this software, in whole
-or in part, without prior written permission from DIMProductions.
-
-This software is provided "as is" without warranty of any kind.
-DIMProductions assumes no liability for use, misuse, or damages arising
-from this product.
-
-Author: Davinci Leonhard  
+Author: Davinci Leonhard
 Organization: DIMProductions (DIMP)
+
+This license applies to all source code, assets, documentation,
+and binary outputs included in this repository, unless otherwise noted.
+
