@@ -1,0 +1,895 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <link rel="preload" href="https://dim.productions/assets/fonts/PressStart2P.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="canonical" href="https://dim.productions/pianovirtuoso18">
+  <title>Piano Virtuoso 18</title>
+  <style>
+    *{box-sizing:border-box}
+    html,body{height:100%; overscroll-behavior: none; touch-action: manipulation; -webkit-text-size-adjust: 100%; overflow-x:hidden;}
+    body{-webkit-touch-callout:none;-webkit-user-select:none}
+    @font-face{
+      font-family:'Press Start 2P';
+src: url('assets/fonts/PressStart2P.woff2') format('woff2');
+      font-style:normal;font-weight:400;font-display:swap;
+    }
+    body{margin:0;background:#000;color:#fff;font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,"Noto Sans JP",sans-serif;text-align:center;font-synthesis:none}
+.wrap{max-width:100%;margin:0 auto;padding:8px var(--padR) 12px var(--padL);min-height:100vh;display:grid;grid-template-rows:auto auto 1fr auto;justify-items:center}
+/* ステージ幅：ピアノに合わせて中央に */
+.controls,
+#pianoArea{position:relative;display:flex;justify-content:center;align-items:stretch;margin:2px auto 0;max-width:100%;user-select:none;-webkit-user-select:none;touch-action:none;overscroll-behavior:contain;overflow:visible;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;flex:1}
+#pianoArea{
+  width: var(--stage-w);
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-start;
+  gap:6px;
+  margin:2px auto 0;
+  max-width:100%;
+  user-select:none;-webkit-user-select:none;touch-action:none;overscroll-behavior:contain;overflow:visible;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;flex:1
+}
+    h1{font:700 18px/1.2 'Press Start 2P',monospace;margin:4px 0 6px;letter-spacing:.5px}
+    h1:empty{margin:0;height:0;padding:0}
+    #overlay,.big,.segments label{font-family:'Press Start 2P',monospace}
+    .card>div:first-child{font-family:'Press Start 2P',monospace;font-weight:700;letter-spacing:.3px}
+
+    .controls{display:flex;flex-direction:column;gap:8px;align-items:center}
+    .segments{display:flex;gap:10px}
+    .segments label{ padding:8px 12px; cursor:pointer; background:transparent; font-size:16px; line-height:1.2; }
+    .segments input{display:none}
+    .segments input:checked+label{background:#b5001e;color:#000}
+
+    .btnRow{display:flex;gap:var(--btn-gap);justify-content:center;align-items:center;flex-wrap:nowrap;padding:2px 0;min-width:0;width:100%}
+    @media (max-width:480px){
+  .btnRow{ flex-wrap:nowrap; }
+}
+@media (min-width:768px){.controls{gap:12px}#pianoArea{margin:10px auto 0}.btnRow{ gap:max(var(--btn-gap), 14px); }}
+
+    button{ padding:20px; border:none; background:transparent; cursor:pointer; margin:0; line-height:0; -webkit-appearance:none; appearance:none; box-shadow:none; }
+    .svgBtn{display:grid;place-items:center;touch-action:manipulation;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;min-width:0;flex:0 0 calc((100% - var(--btn-gap)) / 2);background:transparent !important;border:0;}
+    .svgBtn .icon{display:block;width:100%;height:auto;transition:filter .25s ease, transform .06s;overflow:visible}
+    .svgBtn .icon use{transition:filter .25s ease}
+    .svgBtn.pressed .icon{transform:translateY(3px) scale(.98)}
+
+/* 初期状態: start青く光る, stop消灯（SVG Filter 版） */
+#btnStart .icon{ filter: url(#glow-blue); }
+#btnStop  .icon{ filter: none; opacity: .6; }
+
+/* プレイ中（start→消灯 / stop→赤く発光） */
+body.playing #btnStart .icon{ filter: none; opacity: .6; }
+body.playing #btnStop  .icon{ filter: url(#glow-red); opacity: 1; }
+
+
+    .card{background:#111;padding:10px;margin:12px 0}
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+    .big{font-weight:700;font-size:20px;line-height:1.1;font-family:'Press Start 2P',monospace}
+
+    #pianoArea{position:relative;display:flex;justify-content:center;align-items:stretch;margin:2px auto 0;max-width:100%;user-select:none;-webkit-user-select:none;touch-action:none;overscroll-behavior:contain;overflow:visible;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none;flex:1}
+    #pianoArea svg{
+  display:block;width:100%;height:auto;max-height:100%;
+  margin:0 auto;overflow:visible;
+  pointer-events:auto;
+}
+#C1up,#C1down,#D1up,#D1down,#keys{ pointer-events:auto; }
+    
+    .spacer-md{height:12px}
+
+    /* Result modal */
+    #resultModal{position:fixed;inset:0;background:rgba(0,0,0,.78);display:none;align-items:center;justify-content:center;z-index:2147483646}
+    #resultModal.show{display:flex}
+    #resultModal .panel{background:#0b0b0b;border:1px solid #222;padding:18px clamp(14px,4vw,20px);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.6);width:min(480px,calc(100vw - var(--padL) - var(--padR) - 16px));margin-inline:auto;box-sizing:border-box;overflow-wrap:anywhere;text-align:center}
+    #resultModal h2{margin:0 0 14px;font:700 16px/1.2 'Press Start 2P',monospace;letter-spacing:.4px}
+    #resultModal .grid{display:grid;grid-template-columns:1fr;gap:10px}
+    #resultModal .card{background:#111;padding:10px}
+    #resultModal .big{font:700 20px/1.1 'Press Start 2P',monospace}
+    #resultModal .actions{display:flex;justify-content:center;margin-top:14px;padding-inline: clamp(8px, 4vw, 16px)}
+    #resultModal .actions button{padding:10px 14px;background:#222;border:1px solid #444;border-radius:10px;color:#fff;cursor:pointer;font:700 12px 'Press Start 2P',monospace}
+    body.playing #resultModal{display:none}
+    .grid.inlineScore{display:none}
+    .key{display:flex;align-items:center;justify-content:center;transition:transform .06s ease, filter .06s ease}
+#pianoArea{ position: relative; }
+
+#timeCard{
+  display: none;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: calc(-1 * var(--time-overlap, 10px));
+  pointer-events: none;
+  z-index: 2;
+}
+body.running #timeCard{ display: block; }
+    body.running #timeCard[aria-hidden]{aria-hidden:false}
+
+#timeCard{ background: rgba(17,17,17,.9); }
+
+    #overlay{position:fixed;inset:0;display:grid;place-items:center;background:rgba(0,0,0,.5);color:#b51010;font:700 clamp(40px,10vw,120px)/1 'Press Start 2P',monospace;opacity:0;pointer-events:none;transition:.15s;z-index:2147483647;will-change:opacity}
+    #overlay.show{opacity:1}
+
+:root{
+  --btn-gap: 12px;
+  --padL: max(16px, env(safe-area-inset-left));
+  --padR: max(16px, env(safe-area-inset-right));
+  --stage-w: clamp(320px, calc(100vw - var(--padL) - var(--padR) - 8px), 480px);
+}
+/* === Splash (Logo + START) state === */
+#splash{position:fixed;inset:0;display:none;place-items:center;background:rgba(0,0,0,.78);z-index:2147483647}
+#splash .inner{background:#0b0b0b;border:1px solid #222;border-radius:14px;padding:22px clamp(16px,5vw,28px);box-shadow:0 10px 30px rgba(0,0,0,.6);text-align:center;width:min(520px,calc(100vw - var(--padL) - var(--padR) - 20px))}
+#splash .logo{font:700 clamp(20px,8vw,28px)/1.15 'Press Start 2P',monospace;letter-spacing:.5px;margin:0 0 14px}
+#splash .sub{opacity:.8;font:700 clamp(12px,3.8vw,14px)/1.2 'Press Start 2P',monospace;margin:0 0 12px}
+#splash .actions{display:flex;flex-direction:column;align-items:stretch;justify-content:center;gap:12px;margin-top:8px}
+#splash .actions button{width:min(100%, 320px);align-self:center;padding:12px 16px;background:#151515;border:1px solid #444;border-radius:12px;color:#fff;cursor:pointer;font:700 14px 'Press Start 2P',monospace}
+#splash .actions button:active{transform:translateY(2px)}
+body.state-splash #splash{display:grid}
+body.state-splash .controls,
+body.state-splash #pianoArea,
+body.state-splash .inlineScore,
+body.state-splash #resultModal{display:none !important}
+  /* === Manual modal & splash footer === */
+#manualModal{position:fixed;inset:0;background:rgba(0,0,0,.78);display:none;align-items:center;justify-content:center;z-index:2147483648}
+#manualModal.show{display:flex}
+#manualModal .panel{background:#0b0b0b;border:1px solid #222;padding:18px clamp(14px,4vw,20px);border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.6);width:min(520px,calc(100vw - var(--padL) - var(--padR) - 16px));margin-inline:auto;box-sizing:border-box;overflow-wrap:anywhere;text-align:left}
+#manualModal h2{margin:0 0 12px;font:700 16px/1.2 'Press Start 2P',monospace;letter-spacing:.4px;text-align:center}
+#manualModal .content{font:12px/1.5 'Press Start 2P',monospace;color:#ddd;letter-spacing:.3px}
+#manualModal .content p{margin:0 0 10px}
+#manualModal .actions{display:flex;justify-content:center;margin-top:14px}
+#manualModal .actions button{padding:10px 14px;background:#222;border:1px solid #444;border-radius:10px;color:#fff;cursor:pointer;font:700 12px 'Press Start 2P',monospace}
+#splash .footer{opacity:.7;margin-top:12px;font:700 11px/1.2 'Press Start 2P',monospace;letter-spacing:.3px}
+.stageStack{display:flex;flex-direction:column;align-items:center;gap:6px;width:100%}
+
+/* Copyright text */
+.footer-8bit .copyright{
+  font-family: "Press Start 2P", system-ui, sans-serif;
+  font-size: 12px;
+  color: var(--mut);
+}
+
+</style>
+</head>
+<body>
+    <div class="controls">
+      <div class="segments">
+        <input id="modeE" type="radio" name="mode" value="E" checked>
+        <label for="modeE">Erlkönig</label>
+        <input id="modeD" type="radio" name="mode" value="D">
+        <label for="modeD">Diavolo</label>
+      </div>
+  <!-- Inline SVG symbols so <use> works locally -->
+  <svg  style="position:absolute;width:0;height:0;overflow:hidden">
+    <symbol id="btn-start" viewBox="0 0 195.83154 45.981833"><filter id="glow-blue" x="-70%" y="-70%" width="240%" height="240%" filterUnits="objectBoundingBox" color-interpolation-filters="sRGB">
+  <feGaussianBlur in="SourceAlpha" stdDeviation="15" result="blur"/>
+  <feFlood flood-color="#00b4ff" flood-opacity="0.98" result="color"/>
+  <feComposite in="color" in2="blur" operator="in" result="glow"/>
+  <feMerge>
+    <feMergeNode in="glow"/>
+    <feMergeNode in="SourceGraphic"/>
+  </feMerge>
+</filter>
+      <g transform="translate(-184.87527,-0.433794)">
+        <path fill="#1a1a1a" d="m 214.36793,41.837793 -4.12,0.002 -0.0238,-4.14196 -4.12004,-9.8e-4 -0.1418,-28.970979 4.11808,-0.008 -0.0238,-4.14 h 4.12016 l -0.024,-4.14 h 33.2002 l 0.0238,4.14 h 4.07204 l 0.0238,4.1439 h 4.144 l -0.0238,28.972159 h -4.144 l 0.0238,4.1439 h -4.14358 l 0.024,4.144 h -32.9612 z"/>
+        <path fill="#000055" d="m 214.34407,37.693753 -4.12,0.002 -0.0238,-4.14196 -4.12004,-9.8e-4 -0.1418,-24.831019 4.11808,-0.008 -0.0238,-4.14 h 4.12016 l -0.024,-4.14 h 33.1999 l 0.0238,4.14 h 4.1442 l 0.0238,4.1439 h 4.096 l -0.0238,24.832199 h -4.096 l 0.0238,4.1439 h -4.1919 l 0.024,4.144 h -32.98474 z"/>
+        <path fill="#0000aa" d="m 214.32037,33.553753 h -4.12016 l -0.1438,-24.839999 h 4.12016 l -0.0238,-4.14 h 33.2002 l 0.0238,4.14 h 4.12014 l -0.0954,24.839999 h -4.12014 l 0.0238,4.14 h -32.9612 z"/>
+        <path fill="#0000ff" d="m 214.32037,33.553753 -0.1438,-24.839999 h 33.2002 l -0.0954,24.839999 z"/>
+        <path fill="#00ccff" d="m 218.32104,25.269853 h -4.09615 l -0.0483,-16.556099 4.12007,-2e-5 v -4.13998 h 24.91201 v 4.13998 l 4.16774,-3.4e-4 v 16.560359 h -4.17964 l 0.0238,4.14 -24.87589,-0.004 z"/>
+        <path fill="#000" d="m 226.51306,14.933357 h 12.384 v 4.144397 h -4.12016 l 0.012,2.072 h -4.12016 l -0.0358,2.072 h -4.12016 z"/>
+        <path fill="#0000ff" d="m 226.51267,8.717754 h 4.13231 l -0.012,2.072 h 4.12016 l 0.0119,2.072 h 4.13202 v 4.144 h -4.10811 l 0.012,2.072 h -4.12016 l -0.0358,2.072 h -4.13231 z"/>
+      </g>
+    </symbol>
+    <symbol id="btn-stop" viewBox="0 0 195.83154 45.981833"> <!-- btn-stop 内の filter -->
+<filter id="glow-red" x="-70%" y="-70%" width="240%" height="240%" filterUnits="objectBoundingBox" color-interpolation-filters="sRGB">
+  <feGaussianBlur in="SourceAlpha" stdDeviation="15" result="blur"/>
+  <feFlood flood-color="#ff3c3c" flood-opacity="0.98" result="color"/>
+  <feComposite in="color" in2="blur" operator="in" result="glow"/>
+  <feMerge>
+    <feMergeNode in="glow"/>
+    <feMergeNode in="SourceGraphic"/>
+  </feMerge>
+</filter>
+</defs>
+      <g transform="translate(-286.97479,90.724357)">
+        <path fill="#1a1a1a" d="m 417.06275,-49.320358 -4.12,0.002 -0.0238,-4.14196 -4.12004,-9.8e-4 -0.1418,-28.970979 4.11808,-0.008 -0.0238,-4.14 h 4.12016 l -0.024,-4.14 h 33.20052 l 0.0238,4.14 h 4.09623 l 0.0238,4.1439 h 4.144 l -0.0238,28.972159 h -4.144 l 0.0238,4.1439 h -4.16777 l 0.024,4.144 h -32.96152 z"/>
+        <path fill="#550000" d="m 417.03889,-53.464398 -4.12,0.002 -0.0238,-4.14196 -4.12004,-9.8e-4 -0.1418,-24.831019 4.11808,-0.008 -0.0238,-4.14 h 4.12016 l -0.024,-4.14 h 33.2002 l 0.0238,4.14 h 4.12041 l 0.0238,4.1439 h 4.144 l -0.0238,24.832199 h -4.144 l 0.0238,4.1439 h -4.19195 l 0.024,4.144 h -32.9612 z"/>
+        <path fill="#aa0000" d="m 417.01519,-57.604398 h -4.12016 l -0.1438,-24.839999 h 4.12016 l -0.0238,-4.14 h 33.2002 l 0.0238,4.14 h 4.15611 l -0.0954,24.839999 h -4.15611 l 0.0238,4.14 h -32.9612 z"/>
+        <path fill="#d40000" d="m 417.01519,-57.604398 -0.1438,-24.839999 h 33.2002 l -0.0954,24.839999 z"/>
+        <path fill="#ff8080" d="m 421.03987,-65.888298 h -4.12016 l -0.0483,-16.556099 4.1678,-2e-5 -0.0238,-4.13998 h 24.8646 l 0.0238,4.13998 4.16742,-3.4e-4 v 16.560359 h -4.31042 l 0.0238,4.14 -24.7211,-0.004 z"/>
+        <path fill="#000" d="m 312.75358,22.78496 v -2.072 h 12.36215 l -3e-4,2.072 z" transform="translate(114.60833,-90.724357)"/>
+        <path fill="#aa0000" d="m 312.75354,20.71296 -0.071,-12.433 h 12.36124 l 0.0718,12.433 z" transform="translate(114.60833,-90.724357)"/>
+      </g>
+    </symbol>
+  </svg>
+
+
+    <!-- PIANO AREA -->
+    <div id="pianoArea" aria-label="Piano Keys">
+      <div class="stageStack">
+        <div class="btnRow">
+          <button id="btnStart" class="svgBtn" aria-label="Start">
+            <svg class="icon" viewBox="0 0 195.83154 45.981833"><use href="#btn-start"></use></svg>
+          </button>
+          <button id="btnStop" class="svgBtn" aria-label="Stop" disabled>
+            <svg class="icon" viewBox="0 0 195.83154 45.981833"><use href="#btn-stop"></use></svg>
+          </button>
+        </div>
+        <!-- Paste Piano SVG here (keeps in same stacking context as buttons) -->
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="piano" width="420" height="480" shape-rendering="crispEdges" version="1.1" viewBox="0 0 420 480" xmlns="http://www.w3.org/2000/svg">
+ <!-- SAFE-TRIM: removed editors' metadata/defs; keeps required IDs for JS -->
+ <!-- === Background frame (non-interactive) === -->
+ <g id="bg" transform="matrix(8.6114 0 0 8.6214 -660.71 -110.27)" pointer-events="none" aria-hidden="true">
+  <path d="m76.728 15.836h48.77l-4.1e-4 52.629h-48.772z"/>
+  <path d="m125.5 12.79 9.1e-4 3.655h-24.386l-0.14099 40.681-0.0273 11.339 17.236-3.99e-4 5e-3 -11.427 7.3146 3.99e-4 -5e-3 11.427-48.772-4e-6 0.0059-11.427h7.3125l-0.0067 11.427 34.146-3.99e-4 -17.236 3.99e-4 0.16843-52.02-24.386-4e-5 -9.17e-4 -3.655z" fill="#1a1a1a" stroke-width=".69471"/>
+  <path d="m107.2 57.038 9.7868 6.58e-4v2.4331h-9.7868z" fill="#e6e6e6"/>
+  <path d="m107.2 59.471 9.7868 4e-4 5e-5 4.8682-9.7869 0.0028z" fill="#f4eed7"/>
+  <path d="m110.86 43.245v-24.362l6.1268-0.0014v38.156l-9.7868 4.2e-5v-13.793z" fill="#fff"/>
+  <path d="m125.5 57.038h-7.3125l-0.0187-38.155h7.3329zm-41.438-5.15e-4h-7.3125l-0.02202-38.155h7.3141zm32.904 11.426-31.69 0.0021v-4.1244l31.69-0.0012z" fill="#1a1a1a" stroke-width=".14835"/>
+  <path d="m85.275 17.664 31.691-6.27e-4 -3.2e-4 1.2182-31.691 6.02e-4z" fill="#800000"/>
+  <path d="m116.99 16.444h1.1824l0.0168 47.896h-1.1992zm-32.946 5.32e-4h1.238l-0.0031 47.895-1.2181 2e-6z"/>
+ </g>
+ <!-- === Keys (interactive: C & D only) === -->
+ <g id="keys" transform="matrix(8.6116,0,0,8.6214,-660.74,-110.27)">
+  <!-- C (UP: visible) -->
+  <g id="C1up" transform="matrix(.64972 0 0 .42232 .81216 -8.3245)">
+   <path d="m130 64.423 9.3709-8.79e-4 -8.7e-4 57.687h5.627l-5e-5 32.657h-14.997z" fill="#fff"/>
+   <path d="m130 154.77 14.997 1.6e-4 -1e-5 5.7771-14.997 4e-5z" fill="#e6e6e6"/>
+   <path d="m130 160.53 14.997 1e-3 5e-5 11.532h-14.997z" fill="#f4eed7"/>
+  </g>
+  <!-- C (DOWN: hidden) -->
+  <g id="C1down" transform="matrix(.64972 0 0 .42232 .81307 -8.2495)" display="none">
+   <path d="m130 64.244 9.3695 5.3e-4 -6.1e-4 57.682h5.6262l1e-5 41.298h-14.997z" fill="#fff"/>
+   <path d="m130 163.24 14.998-0.0126 3.2e-4 5.7692-14.997 0.0106z" fill="#e6e6e6"/>
+   <path d="m130 168.99 14.996 1.3e-4v2.8957l-14.997-0.0113z" fill="#e9ddaf"/>
+   <path d="m139.37 64.245 9.369 1e-3 5.3e-4 63.454-9.369-9.9e-4z"/>
+   <path d="m141.25 116.16 3.7412 1e-3v8.6616l-3.7413-1e-3z" fill="#333"/>
+  </g>
+  <!-- D (UP: visible) -->
+  <g id="D1up" transform="matrix(.64972 0 0 .42232 11.776 -8.5682)">
+   <path d="m131.87 122.68-4.2e-4 -57.683 11.261-6.51e-4 -2e-5 22.598-2e-5 35.086h1.8704v32.661h-15v-32.662z" fill="#fff"/>
+   <path d="m130 155.34h15.001v5.7692l-15-1e-5z" fill="#e6e6e6"/>
+   <path d="m130 161.11h15v11.532l-15 1.3e-4z" fill="#f4eed7"/>
+  </g>
+  <!-- D (DOWN: hidden) -->
+  <g id="D1down" transform="matrix(-.65075 0 0 .42232 190.6 -8.323)" display="none">
+   <path d="m130.02 64.426 14.976-0.0029v98.976h-14.976z" fill="#fff"/>
+   <path d="m130.02 163.4 14.976-2e-3v5.7692l-14.976 2e-3z" fill="#e6e6e6"/>
+   <path d="m130.02 169.17h14.976v2.8958h-14.976z" fill="#e9ddaf"/>
+   <path d="m143.14 64.419 1.8664 9.4e-4 -0.00294 60.569h1.8655v2.8849h-3.7256z"/>
+   <path d="m130.02 64.418 1.8729 1.1e-4v63.458h-3.7345l-2.9e-4 -2.8888h1.8635z"/>
+   <path d="m128.16 116.31 1.8615 0.0152 1e-5 8.6571h-1.8635z" fill="#333"/>
+   <path d="m145 116.33 1.8655-5e-3 -3e-3 8.6636h-1.8654z" fill="#333"/>
+  </g>
+ </g>
+ <!-- === Black keys (visual only) === -->
+ <g id="bk-top" transform="matrix(8.6116 0 0 8.6214 -660.74 -110.27)" pointer-events="none" aria-hidden="true">
+  <g transform="matrix(.60911 0 0 .37263 15.262 -5.3387)">
+   <path d="m124.94 65 9.9974-3.1e-4 4.5e-4 62.111h-9.9978z"/>
+   <path d="m126.95 65.001 5.9937 1.7e-5 2.1e-4 62.111h-5.994zm-26.041-6.5416h12.005v6.5416h-12.003zm0.0396 121.99h12.002v6.5449h-12.002zm68.027 0h12.036l3e-3 6.5449h-12.039zm-0.0316-121.99h12.031l7e-3 6.5416h-12.038zm-53.997 128.53 52.026 2e-3z" fill="#333"/>
+   <path d="m126.95 65.001 1.9998 4e-6 1e-5 55.554 3.9939 2.1e-4v3.2783l-5.9938-1.1e-4zm-26.039-11.447h12.004v4.9052h-12.005zm0.0356 120.35h12.001v6.545h-12.002zm67.999-120.35h12.035l-4e-3 4.9052h-12.031zm0.0286 120.35h12.041l-4e-3 6.545h-12.037z" fill="#4d4d4d"/>
+  </g>
+  <g transform="matrix(.60911 0 0 .37263 28.662 -5.3376)">
+   <path d="m124.95 64.996 9.9974 0.0041v65.369l-6.0085 8e-3v-3.2688l-3.9889 2.5e-4z"/>
+   <path d="m126.95 65 5.9989 1.7e-5v62.109h-5.9989z" fill="#333"/>
+   <path d="m126.95 65.001h1.9889v55.551l4.0001 2.2e-4v3.2783l-5.989-2.1e-4z" fill="#4d4d4d"/>
+  </g>
+ </g>
+ <!-- === Fingers (hidden by default) === -->
+</svg>
+     </div>
+
+
+    <div class="card" id="timeCard" aria-live="polite" aria-hidden="true">
+      <div>TIME LEFT</div>
+      <div class="big" id="timeLeft">10.00</div>
+    </div>
+
+    </div>
+<footer class="footer-8bit footer--stack">
+  <span class="copyright">© DIMProductions</span>
+</footer>
+<!-- end of pianoArea -->
+    <div class="grid inlineScore">
+      <div class="card"><div>HITS</div><div id="hits" class="big">0</div></div>
+      <div class="card"><div>STABILITY</div><div id="stability" class="big">0.000</div></div>
+      <div class="card"><div>SCORE</div><div id="score" class="big">0</div></div>
+    </div>
+  </div>
+  <div id="splash" role="dialog" aria-modal="true">
+  <div class="inner">
+    <div class="logo"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 211.67 26.46" role="img" aria-label="Piano Virtuoso 18 logo">
+  <g transform="translate(74.122 -23.225) scale(.31127)">
+    <path fill="#800000" d="M287.15-1430.72h3.68v3.68h-3.68zm7.36 36.83h7.37v-11.05h-7.37v-3.68h7.37v-3.69h-7.37v-3.68h7.37v-7.36h-11.05v-3.69h3.68v-3.68h11.05v3.68h3.68v3.68h3.68v3.69h-3.68v29.46h3.68v-29.46h3.69v25.78h3.68v-29.46h-7.36v-3.69h14.73v33.14h-3.69v3.69h-7.36v3.68h-7.37v7.37h-3.68v3.68h-3.68v-14.73h-7.37zm33.15-36.83h3.68v3.68h-3.69zm-36.83 40.5h3.68v3.69h-3.68zm47.87-40.5h7.37v7.37h-7.37zm-3.68 36.83h3.68v-14.73h-3.68v-3.69h3.68v-3.68h7.37v3.68h3.68v3.68h-3.68v14.74h3.68v3.68h-3.68v3.68h-7.37v-3.68h-3.68zm18.41 0h3.68v-14.73h3.69v-3.69h3.68v18.41h7.37v-18.4h-7.37v-3.69h11.05v3.68h7.36v3.68h-3.68v14.74h3.68v3.68h-3.68v3.68h-7.36v-3.68h-3.69v3.68h-7.36v-3.68h-7.37zm36.83 0h3.68v-14.73h-7.36v-3.69h3.68v-3.68h7.36v3.68H405v-3.68h7.36v3.68h7.37v3.68h-3.68v14.74h3.68v3.68h-3.68v3.68h-3.69v-3.68h-3.68v-18.41h-7.36v14.72H405v3.69h-3.68v3.68h-7.37v-3.68h-3.68zm33.14 0h3.68v-14.73h3.69v-3.69h3.68v18.41h7.36v-14.72h-3.68v-3.69h-3.68v-3.68h11.05v3.68h7.36v3.68h-3.68v14.74h-3.68v3.68h-7.37v3.68h-7.36v-3.68h-7.37zm51.56-36.83h3.68v3.68h-3.68zm29.46 3.68h3.68v-3.68h7.36v3.68h7.37v3.68h-3.68v25.78h-3.69v3.68h-3.68v-29.45h-7.36Zm18.41-3.68h3.68v3.68h-3.68zm-36.83 22.1h7.37v-3.69H486v-3.68h7.37v-7.36h-14.73v-3.69H486v-3.68h11.05v3.68h3.68v3.68h3.69v3.69h-3.69v22.1h-7.36v-7.37H486zm-3.68 14.72h22.1v-25.77h3.68v25.78h3.68v3.68h-3.68v3.68h-11.05v-3.68h-14.73zm-3.68 3.69h3.68v3.68h-3.68zm51.55-40.51h7.37v7.37h-7.36zm-3.68 36.83h3.68v-14.73h-3.68v-3.69h3.68v-3.68h7.37v3.68h3.68v3.68h-3.68v14.74h3.68v3.68h-3.68v3.68h-7.36v-3.68h-3.69zm22.1 0h3.68v-14.73h-7.36v-3.69h3.68v-3.68h7.36v3.68h3.68v18.41h3.69v3.69h-3.69v3.68h-7.36v-3.68h-3.68zm14.73-18.42h-3.69v-3.68h11.05v7.37h-7.36zm11.04 18.41h3.69v-18.4h-3.69v-3.69h3.69v-7.36h3.68v-3.69h3.68v11.05h7.37v3.68h-7.37v18.41h7.37v3.69h-3.68v3.68h-7.37v-3.68h-7.36zm25.78 0h3.69v-14.72h-7.37v-3.69h3.68v-3.68h7.37v3.68h3.68v18.41h7.37v-14.72h-3.69v-3.69h3.69v-3.68h7.36v3.68h3.68v3.68h-3.68v14.74h7.37v3.68h-3.69v3.68h-7.36v-3.68h-7.37v3.68h-7.36v-3.68h-7.37zm36.83 0h3.68v-14.72h3.68v-3.69h3.69v18.41h7.36v-14.72h-3.68v-3.69h-3.68v-3.68h11.04v3.68h7.37v3.68h-3.68v14.74h-3.69v3.68h-7.36v3.68h-7.37v-3.68H637zm55.24-25.77h3.68v7.36h-3.68zm0 11.05h3.68v3.68h-3.68zm-18.42 14.72h3.69v-3.68h-3.69v-11.05h3.69v-3.68h3.68v-3.68h7.36v3.68h3.69v3.68h-11.05v7.37h3.68v3.68h-3.68v3.68h7.37v-7.36h-3.69v-3.68h7.37v3.68h3.68v7.37h-3.68v3.68h-3.69v3.68h-7.36v-3.68h-7.36zm-3.68 3.69h3.68v3.68h-3.68zm29.46-3.68h3.68v-14.73h3.69v-3.69h3.68v18.41H718v-14.72h-3.68v-3.69h-3.68v-3.68h11.05v3.68h7.36v3.68h-3.68v14.74h-3.68v3.68h-7.37v3.68h-7.36v-3.68h-7.37zm51.56-18.42h3.68v-3.68h7.37v25.78h-3.69v3.68h-3.68v-22.1h-3.68zm22.1-3.68h3.68v3.68h3.68v-7.36h-7.37zm7.36 14.73h-3.68v-3.68h-3.69v11.05h7.37zm-14.73-3.68h3.68v-7.37h-3.68v-7.36h3.68v-3.68h3.68v-3.69h7.37v3.68h3.68v3.69h3.68v7.36h-3.68v7.37h3.68v11.05h-3.68v3.68h-3.68v3.68h-7.37v-3.68h-3.68v-3.68h-3.68z" transform="matrix(1.35775 0 0 1.35776 -627.998 2027.187)"/>
+    <path fill="#f00" d="M287.15-1430.72h3.68v3.68h-3.68zm7.36 36.83h7.37v-11.05h-7.37v-3.68h7.37v-3.69h-7.37v-3.68h7.37v-7.36h-11.05v-3.69h3.68v-3.68h11.05v3.68h3.68v3.68h3.68v3.69h-3.68v29.46h3.68v-29.46h3.69v25.78h3.68v-29.46h-7.36v-3.69h14.73v33.14h-3.69v3.69h-7.36v3.68h-7.37v7.37h-3.68v3.68h-3.68v-14.73h-7.37zm33.15-36.83h3.68v3.68h-3.69zm-36.83 40.5h3.68v3.69h-3.68zm47.87-40.5h7.37v7.37h-7.37zm-3.68 36.83h3.68v-14.73h-3.68v-3.69h3.68v-3.68h7.37v3.68h3.68v3.68h-3.68v14.74h3.68v3.68h-3.68v3.68h-7.37v-3.68h-3.68zm18.41 0h3.68v-14.73h3.69v-3.69h3.68v18.41h7.37v-18.4h-7.37v-3.69h11.05v3.68h7.36v3.68h-3.68v14.74h3.68v3.68h-3.68v3.68h-7.36v-3.68h-3.69v3.68h-7.36v-3.68h-7.37zm36.83 0h3.68v-14.73h-7.36v-3.69h3.68v-3.68h7.36v3.68H405v-3.68h7.36v3.68h7.37v3.68h-3.68v14.74h3.68v3.68h-3.68v3.68h-3.69v-3.68h-3.68v-18.41h-7.36v14.72H405v3.69h-3.68v3.68h-7.37v-3.68h-3.68zm33.14 0h3.68v-14.73h3.69v-3.69h3.68v18.41h7.36v-14.72h-3.68v-3.69h-3.68v-3.68h11.05v3.68h7.36v3.68h-3.68v14.74h-3.68v3.68h-7.37v3.68h-7.36v-3.68h-7.37zm51.56-36.83h3.68v3.68h-3.68zm29.46 3.68h3.68v-3.68h7.36v3.68h7.37v3.68h-3.68v25.78h-3.69v3.68h-3.68v-29.45h-7.36Zm18.41-3.68h3.68v3.68h-3.68zm-36.83 22.1h7.37v-3.69H486v-3.68h7.37v-7.36h-14.73v-3.69H486v-3.68h11.05v3.68h3.68v3.68h3.69v3.69h-3.69v22.1h-7.36v-7.37H486zm-3.68 14.72h22.1v-25.77h3.68v25.78h3.68v3.68h-3.68v3.68h-11.05v-3.68h-14.73zm-3.68 3.69h3.68v3.68h-3.68zm51.55-40.51h7.37v7.37h-7.36zm-3.68 36.83h3.68v-14.73h-3.68v-3.69h3.68v-3.68h7.37v3.68h3.68v3.68h-3.68v14.74h3.68v3.68h-3.68v3.68h-7.36v-3.68h-3.69zm22.1 0h3.68v-14.73h-7.36v-3.69h3.68v-3.68h7.36v3.68h3.68v18.41h3.69v3.69h-3.69v3.68h-7.36v-3.68h-3.68zm14.73-18.42h-3.69v-3.68h11.05v7.37h-7.36zm11.04 18.41h3.69v-18.4h-3.69v-3.69h3.69v-7.36h3.68v-3.69h3.68v11.05h7.37v3.68h-7.37v18.41h7.37v3.69h-3.68v3.68h-7.37v-3.68h-7.36zm25.78 0h3.69v-14.72h-7.37v-3.69h3.68v-3.68h7.37v3.68h3.68v18.41h7.37v-14.72h-3.69v-3.69h3.69v-3.68h7.36v3.68h3.68v3.68h-3.68v14.74h7.37v3.68h-3.69v3.68h-7.36v-3.68h-7.37v3.68h-7.36v-3.68h-7.37zm36.83 0h3.68v-14.72h3.68v-3.69h3.69v18.41h7.36v-14.72h-3.68v-3.69h-3.68v-3.68h11.04v3.68h7.37v3.68h-3.68v14.74h-3.69v3.68h-7.36v3.68h-7.37v-3.68H637zm55.24-25.77h3.68v7.36h-3.68zm0 11.05h3.68v3.68h-3.68zm-18.42 14.72h3.69v-3.68h-3.69v-11.05h3.69v-3.68h3.68v-3.68h7.36v3.68h3.69v3.68h-11.05v7.37h3.68v3.68h-3.68v3.68h7.37v-7.36h-3.69v-3.68h7.37v3.68h3.68v7.37h-3.68v3.68h-3.69v3.68h-7.36v-3.68h-7.36zm-3.68 3.69h3.68v3.68h-3.68zm29.46-3.68h3.68v-14.73h3.69v-3.69h3.68v18.41H718v-14.72h-3.68v-3.69h-3.68v-3.68h11.05v3.68h7.36v3.68h-3.68v14.74h-3.68v3.68h-7.37v3.68h-7.36v-3.68h-7.37zm51.56-18.42h3.68v-3.68h7.37v25.78h-3.69v3.68h-3.68v-22.1h-3.68zm22.1-3.68h3.68v3.68h3.68v-7.36h-7.37zm7.36 14.73h-3.68v-3.68h-3.69v11.05h7.37zm-14.73-3.68h3.68v-7.37h-3.68v-7.36h3.68v-3.68h3.68v-3.69h7.37v3.68h3.68v3.69h3.68v7.36h-3.68v7.37h3.68v11.05h-3.68v3.68h-3.68v3.68h-7.37v-3.68h-3.68v-3.68h-3.68z" transform="translate(-628.002 2022.187) scale(1.35776)"/>
+    <path fill="#fc0" d="M287.15-1430.72h3.68v3.68h-3.68zm7.36 36.83h7.37v-11.05h-7.37v-3.68h7.37v-3.69h-7.37v-3.68h7.37v-7.36h-11.05v-3.69h3.68v-3.68h11.05v3.68h3.68v3.68h3.68v3.69h-3.68v29.46h3.68v-29.46h3.69v25.78h3.68v-29.46h-7.36v-3.69h14.73v33.14h-3.69v3.69h-7.36v3.68h-7.37v7.37h-3.68v3.68h-3.68v-14.73h-7.37zm33.15-36.83h3.68v3.68h-3.69zm-36.83 40.5h3.68v3.69h-3.68zm47.87-40.5h7.37v7.37h-7.37zm-3.68 36.83h3.68v-14.73h-3.68v-3.69h3.68v-3.68h7.37v3.68h3.68v3.68h-3.68v14.74h3.68v3.68h-3.68v3.68h-7.37v-3.68h-3.68zm18.41 0h3.68v-14.73h3.69v-3.69h3.68v18.41h7.37v-18.4h-7.37v-3.69h11.05v3.68h7.36v3.68h-3.68v14.74h3.68v3.68h-3.68v3.68h-7.36v-3.68h-3.69v3.68h-7.36v-3.68h-7.37zm36.83 0h3.68v-14.73h-7.36v-3.69h3.68v-3.68h7.36v3.68H405v-3.68h7.36v3.68h7.37v3.68h-3.68v14.74h3.68v3.68h-3.68v3.68h-3.69v-3.68h-3.68v-18.41h-7.36v14.72H405v3.69h-3.68v3.68h-7.37v-3.68h-3.68zm33.14 0h3.68v-14.73h3.69v-3.69h3.68v18.41h7.36v-14.72h-3.68v-3.69h-3.68v-3.68h11.05v3.68h7.36v3.68h-3.68v14.74h-3.68v3.68h-7.37v3.68h-7.36v-3.68h-7.37zm51.56-36.83h3.68v3.68h-3.68zm29.46 3.68h3.68v-3.68h7.36v3.68h7.37v3.68h-3.68v25.78h-3.69v3.68h-3.68v-29.45h-7.36Zm18.41-3.68h3.68v3.68h-3.68zm-36.83 22.1h7.37v-3.69H486v-3.68h7.37v-7.36h-14.73v-3.69H486v-3.68h11.05v3.68h3.68v3.68h3.69v3.69h-3.69v22.1h-7.36v-7.37H486zm-3.68 14.72h22.1v-25.77h3.68v25.78h3.68v3.68h-3.68v3.68h-11.05v-3.68h-14.73zm-3.68 3.69h3.68v3.68h-3.68zm51.55-40.51h7.37v7.37h-7.36zm-3.68 36.83h3.68v-14.73h-3.68v-3.69h3.68v-3.68h7.37v3.68h3.68v3.68h-3.68v14.74h3.68v3.68h-3.68v3.68h-7.36v-3.68h-3.69zm22.1 0h3.68v-14.73h-7.36v-3.69h3.68v-3.68h7.36v3.68h3.68v18.41h3.69v3.69h-3.69v3.68h-7.36v-3.68h-3.68zm14.73-18.42h-3.69v-3.68h11.05v7.37h-7.36zm11.04 18.41h3.69v-18.4h-3.69v-3.69h3.69v-7.36h3.68v-3.69h3.68v11.05h7.37v3.68h-7.37v18.41h7.37v3.69h-3.68v3.68h-7.37v-3.68h-7.36zm25.78 0h3.69v-14.72h-7.37v-3.69h3.68v-3.68h7.37v3.68h3.68v18.41h7.37v-14.72h-3.69v-3.69h3.69v-3.68h7.36v3.68h3.68v3.68h-3.68v14.74h7.37v3.68h-3.69v3.68h-7.36v-3.68h-7.37v3.68h-7.36v-3.68h-7.37zm36.83 0h3.68v-14.72h3.68v-3.69h3.69v18.41h7.36v-14.72h-3.68v-3.69h-3.68v-3.68h11.04v3.68h7.37v3.68h-3.68v14.74h-3.69v3.68h-7.36v3.68h-7.37v-3.68H637zm55.24-25.77h3.68v7.36h-3.68zm0 11.05h3.68v3.68h-3.68zm-18.42 14.72h3.69v-3.68h-3.69v-11.05h3.69v-3.68h3.68v-3.68h7.36v3.68h3.69v3.68h-11.05v7.37h3.68v3.68h-3.68v3.68h7.37v-7.36h-3.69v-3.68h7.37v3.68h3.68v7.37h-3.68v3.68h-3.69v3.68h-7.36v-3.68h-7.36zm-3.68 3.69h3.68v3.68h-3.68zm29.46-3.68h3.68v-14.73h3.69v-3.69h3.68v18.41H718v-14.72h-3.68v-3.69h-3.68v-3.68h11.05v3.68h7.36v3.68h-3.68v14.74h-3.68v3.68h-7.37v3.68h-7.36v-3.68h-7.37zm51.56-18.42h3.68v-3.68h7.37v25.78h-3.69v3.68h-3.68v-22.1h-3.68zm22.1-3.68h3.68v3.68h3.68v-7.36h-7.37zm7.36 14.73h-3.68v-3.68h-3.69v11.05h7.37zm-14.73-3.68h3.68v-7.37h-3.68v-7.36h3.68v-3.68h3.68v-3.69h7.37v3.68h3.68v3.69h3.68v7.36h-3.68v7.37h3.68v11.05h-3.68v3.68h-3.68v3.68h-7.37v-3.68h-3.68v-3.68h-3.68z" transform="matrix(1.35775 0 0 1.35776 -627.998 2017.187)"/>
+  </g>
+</svg>
+</div>
+
+    <p class="sub">Tap START to enter</p>
+    <div class="actions">
+      <button id="enterGame" aria-label="Start Game">START</button>
+      <button id="openManual" aria-label="Open Game Manual">GAME MANUAL</button>
+    </div>
+    <div class="footer">&copy; DIMProductions</div>
+  </div>
+</div>
+
+<div id="overlay"></div>
+<!-- Result modal -->
+  <!-- Game Manual Modal -->
+  <div id="manualModal" aria-hidden="true">
+    <div class="panel" role="dialog" aria-modal="true">
+      <h2>GAME MANUAL</h2>
+      <div class="content">
+        <p><strong>How to Play</strong><br>
+        After you press START, “Ready”… then Burst!
+Hit as fast and as accurately as you can for 10 seconds.</p>
+
+        <p><strong>Results</strong><br>
+        You’ll see: <strong>HITS</strong> (total), <strong>STABILITY</strong> (timing consistency), and <strong>SCORE</strong> (speed × stability).</p>
+      </div>
+      <div class="actions"><button id="closeManual">CLOSE</button></div>
+    </div>
+  </div>
+
+  <div id="resultModal" aria-hidden="true">
+    <div class="panel" role="dialog" aria-modal="true">
+      <h2>RESULT</h2>
+      <div class="grid">
+        <div class="card"><div>HITS</div><div id="rHits" class="big">0</div></div>
+        <div class="card"><div>STABILITY</div><div id="rStab" class="big">0.000</div></div>
+        <div class="card"><div>SCORE</div><div id="rScore" class="big">0000</div></div>
+      </div>
+      <div class="actions"><button id="closeResult">OK</button></div>
+    </div>
+  </div>
+
+  <script>
+  // ===== Tap-only minimal engine (no modules; browser-safe) =====
+  const btnStart=document.getElementById('btnStart');
+  const btnStop=document.getElementById('btnStop');
+  const body=document.body;
+  const elHits=document.getElementById('hits');
+  const elStab=document.getElementById('stability');
+  const elScore=document.getElementById('score');
+  const resultModal=document.getElementById('resultModal');
+  const rHits=document.getElementById('rHits');
+  const rStab=document.getElementById('rStab');
+  const rScore=document.getElementById('rScore');
+  const btnCloseResult=document.getElementById('closeResult');
+  const elTime=document.getElementById('timeLeft');
+  const area=document.getElementById('pianoArea');
+
+// ===== Splash control (same HTML, state-based) =====
+(function initSplash(){
+  const u = new URL(location.href);
+  const show = u.searchParams.get('splash') !== '0';
+  if(show) document.body.classList.add('state-splash');
+  const enter = document.getElementById('enterGame');
+  if(enter){
+    enter.addEventListener('click', async ()=>{
+      try{ await ensureAudio(); }catch(_){ }
+      document.body.classList.remove('state-splash');
+      try{ btnStart?.focus?.(); }catch(_){ }
+    });
+  }
+})();
+
+  // Guard: if area is missing for any reason, create one to avoid null errors
+  if(!area){
+    const fallback=document.createElement('div');
+    fallback.id='pianoArea';
+    fallback.style.minHeight='320px';
+    document.querySelector('.wrap').insertBefore(fallback, document.querySelector('.wrap').children[2]);
+  }
+let running=false,counting=false,ts=[]; let scoreNum=0; // timestamps (ms)
+  let mode='E';
+  let lastAccepted=null;
+  // === NEW: per-note last accepted time for Diavolo sensitivity ===
+  const lastTimeByNote = {60:0, 62:0};
+  const DIAVOLO_REPEAT_BLOCK_MS = 60;
+
+  Array.from(document.querySelectorAll('input[name="mode"]')).forEach(r=>{
+    r.onchange = async (e)=>{
+      mode=r.value; lastAccepted=null;
+      if (e && e.isTrusted) { try{ await ensureAudio(); }catch(_){ }
+        const noteMap = { E:60, D:62 };
+        const midi = noteMap[r.value] || 60; beep(midi, 110);
+      }
+    };
+  });
+
+  function flash(btn){ btn.classList.add('pressed'); setTimeout(()=>btn.classList.remove('pressed'),120); }
+  btnStart.addEventListener('pointerdown', ()=> flash(btnStart));
+  btnStop .addEventListener('pointerdown', ()=> flash(btnStop));
+
+  function renderScore(){ elScore.textContent = String(scoreNum).padStart(4,'0'); }
+  function calcIntervals(arr){
+    if (!arr || arr.length < 2) return [];
+    const out=[]; for(let i=1;i<arr.length;i++) out.push(arr[i]-arr[i-1]);
+    return out;
+  }
+  function calcStability(){
+    const iv = calcIntervals(ts);
+    if (iv.length < 2) return 0;
+    const mu = iv.reduce((a,b)=>a+b,0)/iv.length;
+    const sd = Math.sqrt(iv.reduce((s,x)=>s+(x-mu)*(x-mu),0)/iv.length);
+    const stab = Math.max(0, Math.min(1, 1 - (sd/(mu||1))));
+    return stab; // 0..1 (higher is better)
+  }
+  function updateStability(){
+    const stab = calcStability();
+    elStab.textContent = stab.toFixed(3);
+  }
+  function resetStats(){
+    ts.length=0; scoreNum=0;
+    elHits.textContent='0';
+    elStab.textContent='0.000';
+    renderScore();
+    elTime.textContent='10.00';
+  }
+
+ // ===== Audio =====
+const AC = window.AudioContext || window.webkitAudioContext;
+let audio = null;
+let master = null;
+let audioUnlocked = false;
+
+async function ensureAudio(){
+  if (!AC) return null;
+  if (!audio || audio.state === 'closed'){
+    audio = new AC({ 
+      latencyHint: 'interactive',
+      sampleRate: 48000  // iOS推奨サンプルレート
+    });
+    try{
+      master = audio.createGain();
+      master.gain.value = 1;
+      master.connect(audio.destination);
+      
+      // AGC対策：より長いウォームアップ音
+      const warmupDuration = 0.5; // 0.5秒のウォームアップ
+      const g = audio.createGain();
+      g.gain.value = 0.0001; // 完全に無音ではなく極小音量
+      g.connect(master);
+      
+      const buf = audio.createBuffer(1, audio.sampleRate * warmupDuration, audio.sampleRate);
+      const data = buf.getChannelData(0);
+      // 微小なホワイトノイズでAGCを起動
+      for (let i = 0; i < data.length; i++) {
+        data[i] = (Math.random() - 0.5) * 0.0001;
+      }
+      
+      const src = audio.createBufferSource();
+      src.buffer = buf;
+      src.connect(g);
+      src.start(audio.currentTime + 0.001);
+    }catch(e){}
+  }
+  if (audio.state === 'suspended'){
+    try{ await audio.resume(); }catch(e){ console.warn('resume failed', e); }
+  }
+  audioUnlocked = !!(audio && audio.state === 'running');
+  return audio;
+}
+
+// より積極的なアンロック
+window.addEventListener('pointerdown', async () => {
+  await ensureAudio();
+  audioUnlocked = true;
+}, { once: true });
+
+window.addEventListener('keydown', async () => {
+  if (!audioUnlocked) { await ensureAudio(); audioUnlocked = true; }
+}, { once:true });
+
+// ページロード時にも準備（ユーザー操作後に発火）
+window.addEventListener('touchstart', async () => {
+  if (!audioUnlocked) { await ensureAudio(); audioUnlocked = true; }
+}, { once: true, passive: true });
+
+let muted = false;
+function setMuted(on){
+  muted = !!on; document.body.classList.toggle('muted', muted);
+}
+function toggleMuted(){ setMuted(!muted); }
+if (location.search.includes('mute=1')) setMuted(true);
+
+function beep(midi, vel = 100){
+  if (!audio || muted) return;
+  if (audio.state === 'suspended') { audio.resume().catch(()=>{}); }
+  const now = audio.currentTime || 0;
+  const startAt = now + 0.01; // 少し余裕を持たせる
+  const len = 0.09;
+  try{
+    const osc = audio.createOscillator();
+    const g = audio.createGain();
+    osc.type = 'square';
+    osc.frequency.value = 440 * Math.pow(2,(midi-69)/12);
+    const v = Math.max(0.15, Math.min(1, vel/127)); // 最小音量を上げる
+    g.gain.setValueAtTime(0.0001, startAt);
+    g.gain.linearRampToValueAtTime(0.3*v, startAt+0.006); // 音量を少し上げる
+    g.gain.linearRampToValueAtTime(0.0001, startAt+len);
+    osc.connect(g).connect(master || audio.destination);
+    osc.start(startAt);
+    osc.stop(startAt+len);
+  }catch(e){ /* noop */ }
+}
+
+  // ========= Speech (female voice + Excellent >= 7000) =========
+  async function getVoicesAsync(){
+    if (!('speechSynthesis' in window)) return [];
+    const have = speechSynthesis.getVoices();
+    if (have && have.length) return have;
+    return new Promise(res=>{
+      const onv = ()=>{ speechSynthesis.removeEventListener('voiceschanged', onv); res(speechSynthesis.getVoices()||[]); };
+      speechSynthesis.addEventListener('voiceschanged', onv);
+      setTimeout(()=>res(speechSynthesis.getVoices()||[]), 500);
+    });
+  }
+  function pickPreferredEnFemale(voices){
+    if (!voices || !voices.length) return null;
+    const femaleHints = /(samantha|victoria|karen|zira|aria|ana|female|google.*english.*female)/i;
+    const enUS = voices.filter(v => /en[-_]US/i.test(v.lang||''));
+    const hit = enUS.find(v => femaleHints.test(`${v.name} ${v.voiceURI}`));
+    if (hit) return hit;
+    if (enUS[0]) return enUS[0];
+    const enAny = voices.find(v => /^en[-_]/i.test(v.lang||''));
+    return enAny || voices[0] || null;
+  }
+  let speechReady = false;
+  let lastUtter = null;
+  async function unlockSpeech(){
+    if (!('speechSynthesis' in window) || speechReady) return;
+    await getVoicesAsync();
+    try{
+      speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance('');
+      u.lang = 'en-US';
+      u.volume = 0; // 無音
+      u.onend = ()=>{ speechReady = true; };
+      speechSynthesis.speak(u);
+    }catch(e){}
+  }
+  window.addEventListener('pointerdown', unlockSpeech, { once:true });
+  window.addEventListener('keydown',     unlockSpeech, { once:true });
+  document.addEventListener('visibilitychange', ()=>{
+    if (document.visibilityState === 'visible' && 'speechSynthesis' in window){
+      try{ speechSynthesis.resume(); }catch(e){}
+    }
+  });
+
+  function formatScoreTwoDigits(score){
+    const n = Math.max(0, Number(score)|0);
+    const W2 = {
+      '00':'zero','01':'one','02':'two','03':'three','04':'four','05':'five','06':'six','07':'seven','08':'eight','09':'nine',
+      '10':'ten','11':'eleven','12':'twelve','13':'thirteen','14':'fourteen','15':'fifteen','16':'sixteen','17':'seventeen','18':'eighteen','19':'nineteen',
+      '20':'twenty','21':'twenty-one','22':'twenty-two','23':'twenty-three','24':'twenty-four','25':'twenty-five','26':'twenty-six','27':'twenty-seven','28':'twenty-eight','29':'twenty-nine',
+      '30':'thirty','31':'thirty-one','32':'thirty-two','33':'thirty-three','34':'thirty-four','35':'thirty-five','36':'thirty-six','37':'thirty-seven','38':'thirty-eight','39':'thirty-nine',
+      '40':'forty','41':'forty-one','42':'forty-two','43':'forty-three','44':'forty-four','45':'forty-five','46':'forty-six','47':'forty-seven','48':'forty-eight','49':'forty-nine',
+      '50':'fifty','51':'fifty-one','52':'fifty-two','53':'fifty-three','54':'fifty-four','55':'fifty-five','56':'fifty-six','57':'fifty-seven','58':'fifty-eight','59':'fifty-nine',
+      '60':'sixty','61':'sixty-one','62':'sixty-two','63':'sixty-three','64':'sixty-four','65':'sixty-five','66':'sixty-six','67':'sixty-seven','68':'sixty-eight','69':'sixty-nine',
+      '70':'seventy','71':'seventy-one','72':'seventy-two','73':'seventy-three','74':'seventy-four','75':'seventy-five','76':'seventy-six','77':'seventy-seven','78':'seventy-eight','79':'seventy-nine',
+      '80':'eighty','81':'eighty-one','82':'eighty-two','83':'eighty-three','84':'eighty-four','85':'eighty-five','86':'eighty-six','87':'eighty-seven','88':'eighty-eight','89':'eighty-nine',
+      '90':'ninety','91':'ninety-one','92':'ninety-two','93':'ninety-three','94':'ninety-four','95':'ninety-five','96':'ninety-six','97':'ninety-seven','98':'ninety-eight','99':'ninety-nine'
+    };
+    const W1 = ['zero','one','two','three','four','five','six','seven','eight','nine'];
+    if (n < 10) return `${W1[n]} points.`;
+    if (n < 100) return `${W2[String(n).padStart(2,'0')]} points.`;
+    const s4 = String(n).padStart(4,'0');
+    const a = s4.slice(0,2);
+    const b = s4.slice(2);
+    const partA = (a === '00') ? '' : W2[a];
+    const partB = (b === '00') ? '' : W2[b];
+    const phrase = [partA, partB].filter(Boolean).join(' ');
+    return `${phrase || 'zero'} points.`;
+  }
+  async function speakResult(score, {lang='en-US'}={}){
+    if (!('speechSynthesis' in window)) return;
+    if (!speechReady) {
+      await unlockSpeech();
+      if (!speechReady) { setTimeout(()=>{ if (speechReady) speakResult(score,{lang}); }, 80); return; }
+    }
+    const voices = await getVoicesAsync();
+    const v = pickPreferredEnFemale(voices);
+    const isExcellent = Number(score) >= 7000;
+    const formatted = formatScoreTwoDigits(Number(score));
+    const text = isExcellent ? `Excellent! ${formatted}` : formatted;
+    try{
+      if (lastUtter) { try{ speechSynthesis.cancel(); }catch(e){} }
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang   = 'en-US';
+      utter.rate   = 1.0;
+      utter.pitch  = 1.0;
+      utter.volume = 1.0;
+      if (v) utter.voice = v;
+      lastUtter = utter;
+      speechSynthesis.speak(utter);
+    }catch(e){ console.warn('TTS failed:', e); }
+  }
+
+  // === Voice (or beep) countdown ===
+  const USE_VOICE_COUNTDOWN = true;
+  const FAST_DIGITS = false;
+  const BURST_RATE = 1.15;
+  const LIVE_STABILITY = false;
+
+  function speakCountdown(label){
+    return new Promise(async (resolve)=>{
+      const fallback = ()=>{
+        const tone = (label==='BURST!') ? 72 : 60;
+        ensureAudio().then(()=>{ try{ beep(tone, label==='BURST!'?127:110); }catch(_){} });
+        resolve(false);
+      };
+
+      if (!USE_VOICE_COUNTDOWN || !('speechSynthesis' in window)) { fallback(); return; }
+
+      try{
+        await unlockSpeech();
+        const voices = await getVoicesAsync();
+        const v = pickPreferredEnFemale(voices);
+
+        const u = new SpeechSynthesisUtterance(String(label).replace('BURST!','Burst'));
+        u.lang   = 'en-US';
+        u.rate   = (label==='BURST!') ? BURST_RATE : 1.0;
+        u.pitch  = 1.0;
+        u.volume = 1.0;
+        if (v) u.voice = v;
+
+        let started = false;
+        u.onstart = ()=>{ started = true; };
+        u.onerror = ()=>{ fallback(); };
+        u.onend   = ()=>{ resolve(true); };
+
+        try{ if (speechSynthesis.speaking) speechSynthesis.cancel(); }catch(_){ }
+        speechSynthesis.speak(u);
+        setTimeout(()=>{ if (!started) fallback(); }, 450);
+      }catch(e){ fallback(); }
+    });
+  }
+
+  function startCountdown(){
+    if (running || counting) return;
+    counting = true;
+    resetStats();
+    const tc=document.getElementById('timeCard'); if(tc) tc.setAttribute('aria-hidden','true');
+    document.body.classList.add('playing');
+    document.body.classList.add('countdown');
+
+    const overlay = document.getElementById('overlay');
+    overlay.classList.add('show');
+
+    (async ()=>{
+      overlay.textContent = 'READY';
+      await speakCountdown('READY');
+
+      overlay.textContent = 'BURST!';
+      await speakCountdown('BURST!');
+      if (!counting) return;
+
+      await new Promise(r=>setTimeout(r,120));
+
+      overlay.classList.remove('show');
+      overlay.textContent = '';
+      counting = false;
+      const tc=document.getElementById('timeCard'); if(tc) tc.removeAttribute('aria-hidden');
+      startRun();
+    })();
+  }
+
+  // ===== Game loop =====
+  let timerId=null, endAt=0;
+  const DUR_MS = 10000;                 // 10s window
+  const TARGET_HITS_10S = 200;          // 100% speed基準
+  function startRun(){
+    document.body.classList.remove('countdown');
+    document.body.classList.add('running');
+    running=true; btnStop.disabled=false; btnStart.disabled=true; ts.length=0; lastAccepted=null; ensureAudio();
+    const DURATION=DUR_MS;
+    const t0=performance.now(); endAt=t0+DURATION;
+    const tick=()=>{
+      const now=performance.now();
+      const left=Math.max(0, endAt-now);
+      elTime.textContent=(left/1000).toFixed(2);
+      if (left<=0){ finish(); return; }
+      timerId=requestAnimationFrame(tick);
+    };
+    timerId=requestAnimationFrame(tick);
+  }
+
+  // ===== Scoring (Hits + Stability bonus) =====
+  const SC_HITS_W = 1.0;
+  const SC_STAB_W = 1.0;
+  const SC_STAB_REF = 0.12;   // 目安CV
+  function calcScore(){
+    const hits = Number(elHits.textContent)|0;
+    const effectiveHits = (mode==='E') ? hits : Math.floor(hits/2)*2; // トリルは偶数で評価
+    const cv = calcStability();
+    const stabFactor = Math.max(0, (SC_STAB_REF - cv)) / SC_STAB_REF; // 0..1
+    const stabBonus = Math.round(effectiveHits * stabFactor * SC_STAB_W);
+    const base = Math.round(effectiveHits * SC_HITS_W);
+    return Math.max(0, base + stabBonus);
+  }
+
+  function finish(){
+    if(timerId){ cancelAnimationFrame(timerId); timerId=null; }
+    running=false; counting=false; btnStop.disabled=true; btnStart.disabled=false; body.classList.remove('playing'); document.body.classList.remove('running'); document.getElementById('timeCard')?.setAttribute('aria-hidden','true');
+
+    // === Original-style scoring ===
+    const N = ts.length;
+    const dur = (ts.length>=1? (Math.max(1, (ts.at(-1) - ts[0]))/1000) : 0);
+    const sec = Math.min(DUR_MS/1000, Math.max(0.001, dur));
+    const hps = N / sec;
+
+    const elSpeed = document.getElementById('speed');
+    if (elSpeed) elSpeed.textContent = hps.toFixed(2);
+
+    let stab = 0;
+    if(N>=2){
+      const dt=[]; for(let i=1;i<N;i++) dt.push(ts[i]-ts[i-1]);
+      const mu = dt.reduce((a,b)=>a+b,0)/dt.length;
+      const sd = Math.sqrt(dt.reduce((s,x)=>s+(x-mu)*(x-mu),0)/dt.length);
+      stab = Math.max(0, Math.min(1, 1 - (sd/(mu||1))));
+      elStab.textContent = stab.toFixed(3);
+      const speedScore = Math.max(0, Math.min(100, (N / TARGET_HITS_10S) * 100));
+      const stabScore  = stab * 100;
+      scoreNum = Math.round(speedScore * stabScore);
+      renderScore();
+    }else{
+      elStab.textContent = '0.000';
+      scoreNum = 0; renderScore();
+    }
+
+    // === Populate and show result modal ===
+    rHits.textContent = String(N);
+    rStab.textContent = (typeof stab==='number'? stab.toFixed(3) : '0.000');
+    rScore.textContent = String(scoreNum).padStart(4,'0');
+    resultModal.classList.add('show');
+    resetKeyVisuals();
+    speakResult(scoreNum||0);
+  }
+
+  // ===== Tap logic =====
+function swapSvgVisibility(upId, downId, isDown){
+  const up = document.getElementById(upId);
+  const dn = document.getElementById(downId);
+  if(!up || !dn) return;
+  up.style.display = isDown ? 'none'  : 'inline';
+  dn.style.display = isDown ? 'inline': 'none';
+}
+
+function setKeyVisual(note, isDown){
+  if (note === 60) swapSvgVisibility('C1up','C1down', !!isDown);
+  if (note === 62) swapSvgVisibility('D1up','D1down', !!isDown);
+}
+
+function resetKeyVisuals(){
+  setKeyVisual(60, false);
+  setKeyVisual(62, false);
+}
+  function noteFromPos(evt){
+    const r = area.getBoundingClientRect();
+    const x = (evt.clientX ?? (evt.touches && evt.touches[0] && evt.touches[0].clientX) ?? r.left);
+    const ratio = (x - r.left) / Math.max(1, r.width);
+    const SPLIT = 0.5;       // 左右の境界（50%）
+    const DEAD  = 0.015;     // ±1.5% のセンターデッドゾーン
+
+    if (mode==='D' && Math.abs(ratio - SPLIT) <= DEAD){
+      return (lastAccepted === 60) ? 62 : 60;
+    }
+    return (ratio < SPLIT) ? 60 : 62; // left:C(60), right:D(62)
+  }
+  function tapToNote(evt){
+    const n = noteFromPos(evt);
+    const now = performance.now();
+    if (mode==='E'){
+      if (n!==60) return null; // C のみ
+    } else if (mode==='D'){
+      const lastT = lastTimeByNote[n] || 0;
+      if (lastAccepted===n && (now - lastT) < DIAVOLO_REPEAT_BLOCK_MS) return null;
+    }
+    return { note:n, now };
+  }
+
+function onDown(evt){
+  if (!running) return;
+
+  const nAnim = noteFromPos(evt);
+  const allowAnim = (mode === 'E') ? (nAnim === 60) : (nAnim === 60 || nAnim === 62);
+  if (allowAnim) setKeyVisual(nAnim, true);
+
+  const res = tapToNote(evt);
+  if (!res) return;
+
+  lastAccepted = res.note;
+  lastTimeByNote[res.note] = res.now || performance.now();
+  ts.push(performance.now());
+  elHits.textContent = String(Number(elHits.textContent) + 1);
+  if (LIVE_STABILITY) updateStability();
+
+  ensureAudio().then(()=>{ beep(res.note, 115); });
+}
+
+function onUp(evt){
+  if (!running) return;
+  const n = noteFromPos(evt);
+  const allowAnim = (mode === 'E') ? (n === 60) : (n === 60 || n === 62);
+  if (allowAnim) setKeyVisual(n, false);
+}
+
+  // Wire piano area events
+  if (area){
+    area.addEventListener('pointerdown', onDown, {passive:true});
+  }
+  window.addEventListener('pointerup', onUp, {passive:true});
+  window.addEventListener('pointercancel', onUp, {passive:true});
+
+  // Buttons
+  btnStart.addEventListener('click', ()=> startCountdown());
+  btnStop.addEventListener('click', ()=> finish());
+  btnCloseResult.addEventListener('click', ()=>{ resultModal.classList.remove('show'); });
+  resultModal.addEventListener('click', (e)=>{ if(e.target===resultModal) resultModal.classList.remove('show'); });
+
+  // ==== Manual modal wiring ====
+  const manualModal = document.getElementById('manualModal');
+  const btnOpenManual = document.getElementById('openManual');
+  const btnCloseManual = document.getElementById('closeManual');
+  if (btnOpenManual && manualModal){
+    btnOpenManual.addEventListener('click', ()=>{
+      manualModal.classList.add('show');
+      manualModal.removeAttribute('aria-hidden');
+    });
+  }
+  if (btnCloseManual && manualModal){
+    btnCloseManual.addEventListener('click', ()=>{
+      manualModal.classList.remove('show');
+      manualModal.setAttribute('aria-hidden','true');
+    });
+  }
+  if (manualModal){
+    manualModal.addEventListener('click', (e)=>{
+      if (e.target === manualModal){
+        manualModal.classList.remove('show');
+        manualModal.setAttribute('aria-hidden','true');
+      }
+    });
+  }
+  // ESC to close manual/result
+  window.addEventListener('keydown', (e)=>{
+    if (e.key === 'Escape'){
+      if (manualModal && manualModal.classList.contains('show')){
+        manualModal.classList.remove('show');
+        manualModal.setAttribute('aria-hidden','true');
+      }
+      if (resultModal && resultModal.classList.contains('show')){
+        resultModal.classList.remove('show');
+      }
+    }
+  });
+
+  // ==== iOS Safari: prevent tap-zoom & dblclick zoom ====
+  (function preventIOSZoom(){
+    const isiOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if(!isiOS) return;
+
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', (e)=>{
+      const now = Date.now();
+      if (now - lastTouchEnd <= 350) { e.preventDefault(); }
+      lastTouchEnd = now;
+    }, {passive:false});
+
+    document.addEventListener('dblclick', (e)=>{ e.preventDefault(); }, {capture:true});
+
+    document.querySelectorAll('label, button').forEach(el=>{
+      const fs = parseFloat(getComputedStyle(el).fontSize);
+      if (fs && fs < 16) el.style.fontSize = '16px';
+    });
+  })();
+
+  
+</script>
+</body>
+</html>
