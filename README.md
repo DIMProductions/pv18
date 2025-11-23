@@ -38,6 +38,28 @@ User-selectable keys, scale patterns, and velocity tracking.
 
 ---
 
+## Why Piano Virtuoso 18 Actually Improves Your Playing
+
+Most piano practice is slow and controlled. That is essential for learning pieces,
+but it does **not** reveal your physical limit or how fast your fingers can actually move.
+
+Piano Virtuoso 18 adds short, 10-second sprint training on top of your normal routine.
+In each run you push your fingers to high speed while the game measures:
+
+- **Speed** – how many clean taps you can produce in 10 seconds  
+- **Accuracy** – how many of those taps are on the correct key and timing  
+- **Rhythm stability** – how steady your tapping is over the full burst  
+
+Over time this raises your speed ceiling and makes that speed more stable.
+Scales and repertoire start to feel easier because your hands are already trained
+to move faster than the music actually requires.
+
+PV18 is not about random key mashing.  
+It is controlled speed training for repeated notes, trills and fast finger motion,
+with your progress visible as a score instead of just a vague feeling.
+
+---
+
 ## 📱 Mobile Demo (Experimental)
 
 A **separate, simplified mobile-only demo UI** exists at:
