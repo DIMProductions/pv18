@@ -7,6 +7,8 @@ designed to measure and improve rapid repeated-note technique.
 Unlike ordinary tapping games, PV18 evaluates **micro-timing accuracy**,
 **interval consistency**, and **burst-control stability** — essential skills for
 real piano performance.
+It is intended for pianists who want to build faster, cleaner technique
+through short, measurable 10-second sprints instead of only long, slow practice.
 
 > **PV18 is the first piano trainer that measures timing stability, not just speed —
 > making it fundamentally different from any existing tapping or rhythm game.**
