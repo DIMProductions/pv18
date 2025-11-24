@@ -7,7 +7,6 @@ designed to measure and improve rapid repeated-note technique.
 Unlike ordinary tapping games, PV18 evaluates **micro-timing accuracy**,
 **interval consistency**, and **burst-control stability** — essential skills for
 real piano performance.
-
 It is intended for pianists who want to build faster, cleaner technique
 through short, measurable 10-second sprints instead of only long, slow practice.
 
@@ -178,5 +177,6 @@ Unauthorized copying, modification, or commercial use is prohibited.
 
 [info@dim.productions](mailto:info@dim.productions)
 Creator: **Davinci Leonhard**
+
 
 
